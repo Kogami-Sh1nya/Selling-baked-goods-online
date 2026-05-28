@@ -41,12 +41,30 @@ export default function Profile() {
       {orders.length === 0 && <p>Заказов пока нет.</p>}
 
       {orders.map((order) => (
-        <div className="panel" key={order.id}>
-          Заказ №{order.id}: {order.status}, {order.total_price} ₽, доставка{' '}
-          {new Date(order.estimated_delivery_at).toLocaleString()}
+        <div className="panel order-card" key={order.id}>
+          <h3>Заказ №{order.id}</h3>
+
+          <p>
+            Статус: <b>{order.status}</b>
+          </p>
+
+          <p>Сумма: {order.total_price} ₽</p>
+
+          <p>
+            Доставка: {new Date(order.estimated_delivery_at).toLocaleString()}
+          </p>
+
+          <h4>Состав заказа</h4>
+
+          <ul className="order-items">
+            {order.items?.map((item) => (
+              <li key={item.product_id}>
+                {item.name} — {item.quantity} шт. × {item.price_per_unit} ₽
+              </li>
+            ))}
+          </ul>
         </div>
       ))}
-
       {['seller', 'admin'].includes(user.role) && (
         <AdminPanel products={products} />
       )}

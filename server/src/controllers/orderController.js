@@ -160,10 +160,26 @@ export async function myOrders(req, res) {
   try {
     const { rows } = await q(
       `
-      SELECT *
-      FROM orders
-      WHERE user_id = $1
-      ORDER BY order_date DESC
+      SELECT
+        o.*,
+        COALESCE(
+          json_agg(
+            json_build_object(
+              'product_id', p.id,
+              'name', p.name,
+              'quantity', oi.quantity,
+              'price_per_unit', oi.price_per_unit,
+              'total_item_price', oi.total_item_price
+            )
+          ) FILTER (WHERE oi.id IS NOT NULL),
+          '[]'
+        ) AS items
+      FROM orders o
+      LEFT JOIN order_items oi ON oi.order_id = o.id
+      LEFT JOIN products p ON p.id = oi.product_id
+      WHERE o.user_id = $1
+      GROUP BY o.id
+      ORDER BY o.order_date DESC
       `,
       [req.user.id]
     );
@@ -181,9 +197,24 @@ export async function allOrders(req, res) {
       SELECT
         o.*,
         u.name AS user_name,
-        u.email AS user_email
+        u.email AS user_email,
+        COALESCE(
+          json_agg(
+            json_build_object(
+              'product_id', p.id,
+              'name', p.name,
+              'quantity', oi.quantity,
+              'price_per_unit', oi.price_per_unit,
+              'total_item_price', oi.total_item_price
+            )
+          ) FILTER (WHERE oi.id IS NOT NULL),
+          '[]'
+        ) AS items
       FROM orders o
       LEFT JOIN users u ON u.id = o.user_id
+      LEFT JOIN order_items oi ON oi.order_id = o.id
+      LEFT JOIN products p ON p.id = oi.product_id
+      GROUP BY o.id, u.name, u.email
       ORDER BY o.order_date DESC
     `);
 

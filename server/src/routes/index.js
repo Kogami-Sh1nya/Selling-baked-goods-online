@@ -27,4 +27,8 @@ router.delete('/reviews/:id',auth,allow('admin'),r.deleteReview);
 router.get('/users', auth, allow('admin'), u.listUsers);
 router.patch('/users/:id/role', auth, allow('admin'), u.updateUserRole);
 router.delete('/users/:id', auth, allow('admin'), u.deleteUser);
+router.get('/products/:productId/reviews', r.productReviews);
+router.get('/reviews', auth, allow('admin'), r.allReviews);
+router.post('/products/:productId/reviews', auth, r.reviewRules, validate, r.addReview);
+router.delete('/reviews/:id', auth, allow('admin'), r.deleteReview);
 export default router;

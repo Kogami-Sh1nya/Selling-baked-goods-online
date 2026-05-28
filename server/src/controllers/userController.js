@@ -46,8 +46,28 @@ export const updateUserRole = async (req, res) => {
 
 export const deleteUser = async (req, res) => {
   try {
-    await pool.query('DELETE FROM users WHERE id = $1', [req.params.id]);
-    res.json({ message: 'Пользователь удалён' });
+    const result = await pool.query(
+      `
+      UPDATE users
+      SET
+        name = 'Удалённый пользователь',
+        email = CONCAT('deleted_user_', id, '@deleted.local'),
+        password = '',
+        role = 'user'
+      WHERE id = $1
+      RETURNING id, name, email, role, created_at
+      `,
+      [req.params.id]
+    );
+
+    if (!result.rows.length) {
+      return res.status(404).json({ message: 'Пользователь не найден' });
+    }
+
+    res.json({
+      message: 'Пользователь обезличен',
+      user: result.rows[0]
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Ошибка удаления пользователя' });

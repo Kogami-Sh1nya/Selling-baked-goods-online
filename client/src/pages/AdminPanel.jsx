@@ -22,7 +22,11 @@ export default function AdminPanel({ products = [] }) {
   const [localProducts, setLocalProducts] = useState(products);
   const [orders, setOrders] = useState([]);
   const [users, setUsers] = useState([]);
+  const [reviews, setReviews] = useState([]);
+
   const [selectedProductId, setSelectedProductId] = useState('');
+  const [productDraft, setProductDraft] = useState(null);
+
   const selectedProduct = localProducts.find(
     (product) => Number(product.id) === Number(selectedProductId)
   );
@@ -48,6 +52,7 @@ export default function AdminPanel({ products = [] }) {
 
     if (currentUser?.role === 'admin') {
       loadUsers();
+      loadReviews();
     }
   }, []);
 
@@ -65,6 +70,41 @@ export default function AdminPanel({ products = [] }) {
     const data = await api('/users');
     setUsers(data);
   }
+
+  async function loadReviews() {
+    const data = await api('/reviews');
+    setReviews(data);
+  }
+
+  async function deleteReview(reviewId) {
+    if (!confirm('Удалить отзыв?')) return;
+
+    await api(`/reviews/${reviewId}`, {
+      method: 'DELETE'
+    });
+
+    await loadReviews();
+  }
+
+  function selectProduct(productId) {
+    setSelectedProductId(productId);
+
+    const product = localProducts.find(
+      (item) => Number(item.id) === Number(productId)
+    );
+
+    if (!product) {
+      setProductDraft(null);
+      return;
+    }
+
+    setProductDraft({
+      price: product.price,
+      stock_quantity: product.stock_quantity,
+      is_available: product.is_available
+    });
+  }
+
   async function uploadImage(file) {
     const formData = new FormData();
     formData.append('image', file);
@@ -97,12 +137,29 @@ export default function AdminPanel({ products = [] }) {
     await loadProducts();
   }
 
+  async function saveSelectedProduct() {
+    if (!selectedProduct || !productDraft) return;
+
+    await updateProduct(selectedProduct.id, {
+      price: Number(productDraft.price),
+      stock_quantity: productDraft.is_available
+        ? Number(productDraft.stock_quantity)
+        : 0,
+      is_available: productDraft.is_available
+    });
+
+    alert('Товар обновлён');
+  }
+
   async function deleteProduct(productId) {
     if (!confirm('Удалить товар?')) return;
 
     await api(`/products/${productId}`, {
       method: 'DELETE'
     });
+
+    setSelectedProductId('');
+    setProductDraft(null);
 
     await loadProducts();
   }
@@ -137,6 +194,7 @@ export default function AdminPanel({ products = [] }) {
     });
 
     await loadOrders();
+    await loadProducts();
   }
 
   async function updateUserRole(userId, role) {
@@ -167,6 +225,10 @@ export default function AdminPanel({ products = [] }) {
         <button onClick={() => setActiveTab('orders')}>Заказы</button>
 
         {currentUser?.role === 'admin' && (
+          <button onClick={() => setActiveTab('reviews')}>Отзывы</button>
+        )}
+
+        {currentUser?.role === 'admin' && (
           <button onClick={() => setActiveTab('users')}>Пользователи</button>
         )}
       </div>
@@ -176,6 +238,15 @@ export default function AdminPanel({ products = [] }) {
           <h3>Добавить товар</h3>
 
           <form className="admin-form" onSubmit={createProduct}>
+            <input
+              required
+              placeholder="Название"
+              value={newProduct.name}
+              onChange={(e) =>
+                setNewProduct({ ...newProduct, name: e.target.value })
+              }
+            />
+
             <input
               type="file"
               accept="image/png,image/jpeg,image/webp"
@@ -215,7 +286,8 @@ export default function AdminPanel({ products = [] }) {
               onChange={(e) =>
                 setNewProduct({
                   ...newProduct,
-                  stock_quantity: Number(e.target.value)
+                  stock_quantity: Number(e.target.value),
+                  is_available: Number(e.target.value) > 0
                 })
               }
             />
@@ -237,8 +309,6 @@ export default function AdminPanel({ products = [] }) {
               <option value={6}>Макаруны</option>
               <option value={7}>Чизкейки</option>
             </select>
-
-
 
             <textarea
               placeholder="Описание"
@@ -265,10 +335,12 @@ export default function AdminPanel({ products = [] }) {
           <h3>Управление товарами</h3>
 
           <select
+            className="product-select"
             value={selectedProductId}
-            onChange={(e) => setSelectedProductId(e.target.value)}
+            onChange={(e) => selectProduct(e.target.value)}
           >
             <option value="">Выберите товар</option>
+
             {localProducts
               .slice()
               .sort((a, b) => a.id - b.id)
@@ -279,7 +351,7 @@ export default function AdminPanel({ products = [] }) {
               ))}
           </select>
 
-          {selectedProduct && (
+          {selectedProduct && productDraft && (
             <div className="admin-product-editor">
               <h4>{selectedProduct.name}</h4>
 
@@ -287,10 +359,11 @@ export default function AdminPanel({ products = [] }) {
                 Цена
                 <input
                   type="number"
-                  defaultValue={selectedProduct.price}
-                  onBlur={(e) =>
-                    updateProduct(selectedProduct.id, {
-                      price: Number(e.target.value)
+                  value={productDraft.price}
+                  onChange={(e) =>
+                    setProductDraft({
+                      ...productDraft,
+                      price: e.target.value
                     })
                   }
                 />
@@ -301,10 +374,11 @@ export default function AdminPanel({ products = [] }) {
                 <input
                   type="number"
                   min="0"
-                  defaultValue={selectedProduct.stock_quantity}
-                  onBlur={(e) =>
-                    updateProduct(selectedProduct.id, {
-                      stock_quantity: Number(e.target.value),
+                  value={productDraft.stock_quantity}
+                  onChange={(e) =>
+                    setProductDraft({
+                      ...productDraft,
+                      stock_quantity: e.target.value,
                       is_available: Number(e.target.value) > 0
                     })
                   }
@@ -314,14 +388,15 @@ export default function AdminPanel({ products = [] }) {
               <label>
                 Наличие
                 <select
-                  defaultValue={String(selectedProduct.is_available)}
+                  value={String(productDraft.is_available)}
                   onChange={(e) =>
-                    updateProduct(selectedProduct.id, {
+                    setProductDraft({
+                      ...productDraft,
                       is_available: e.target.value === 'true',
                       stock_quantity:
                         e.target.value === 'false'
                           ? 0
-                          : selectedProduct.stock_quantity
+                          : productDraft.stock_quantity
                     })
                   }
                 >
@@ -330,8 +405,15 @@ export default function AdminPanel({ products = [] }) {
                 </select>
               </label>
 
+              <button type="button" onClick={saveSelectedProduct}>
+                Сохранить изменения
+              </button>
+
               {currentUser?.role === 'admin' && (
-                <button onClick={() => deleteProduct(selectedProduct.id)}>
+                <button
+                  type="button"
+                  onClick={() => deleteProduct(selectedProduct.id)}
+                >
                   Удалить товар
                 </button>
               )}
@@ -345,13 +427,24 @@ export default function AdminPanel({ products = [] }) {
           <h3>Заказы</h3>
 
           {orders.map((order) => (
-            <div className="admin-row" key={order.id}>
+            <div className="admin-order-card" key={order.id}>
               <div>
-                <strong>Заказ №{order.id}</strong>
+                <h4>Заказ №{order.id}</h4>
                 <p>{order.customer_name}</p>
                 <p>{order.phone}</p>
                 <p>{order.delivery_address}</p>
                 <p>{order.total_price} ₽</p>
+
+                <h5>Состав заказа</h5>
+
+                <ul className="order-items">
+                  {order.items?.map((item) => (
+                    <li key={`${order.id}-${item.product_id}`}>
+                      {item.name} — {item.quantity} шт. ×{' '}
+                      {item.price_per_unit} ₽
+                    </li>
+                  ))}
+                </ul>
               </div>
 
               <select
@@ -364,6 +457,29 @@ export default function AdminPanel({ products = [] }) {
                   </option>
                 ))}
               </select>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {activeTab === 'reviews' && currentUser?.role === 'admin' && (
+        <div className="admin-section">
+          <h3>Отзывы</h3>
+
+          {reviews.length === 0 && <p>Отзывов пока нет.</p>}
+
+          {reviews.map((review) => (
+            <div className="admin-review-card" key={review.id}>
+              <div>
+                <h4>{review.product_name}</h4>
+                <p>
+                  {review.user_name || 'Пользователь'} — {review.rating}/5
+                </p>
+                <p>{review.comment}</p>
+                <small>{new Date(review.created_at).toLocaleString()}</small>
+              </div>
+
+              <button onClick={() => deleteReview(review.id)}>Удалить</button>
             </div>
           ))}
         </div>
