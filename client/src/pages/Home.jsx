@@ -1,10 +1,15 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Search } from 'lucide-react';
 import { api } from '../services/api.js';
 import ProductCard from '../components/ProductCard.jsx';
 import ProductModal from '../components/ProductModal.jsx';
 
 export default function Home() {
+  const [searchParams] = useSearchParams();
+
+  const selectedCategoryId = searchParams.get('category');
+
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [openedProduct, setOpenedProduct] = useState(null);
@@ -15,9 +20,25 @@ export default function Home() {
     api('/categories').then(setCategories).catch(console.error);
   }, []);
 
-  const filteredProducts = products.filter((product) =>
-    product.name.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredProducts = useMemo(() => {
+    return products.filter((product) => {
+      const matchesSearch = product.name
+        .toLowerCase()
+        .includes(search.toLowerCase());
+
+      const matchesCategory = selectedCategoryId
+        ? Number(product.category_id) === Number(selectedCategoryId)
+        : true;
+
+      return matchesSearch && matchesCategory;
+    });
+  }, [products, search, selectedCategoryId]);
+
+  const visibleCategories = selectedCategoryId
+    ? categories.filter(
+        (category) => Number(category.id) === Number(selectedCategoryId)
+      )
+    : categories;
 
   return (
     <>
@@ -38,7 +59,7 @@ export default function Home() {
       </section>
 
       <main id="catalog">
-        {categories.map((category) => {
+        {visibleCategories.map((category) => {
           const categoryProducts = filteredProducts.filter(
             (product) => Number(product.category_id) === Number(category.id)
           );
