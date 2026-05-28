@@ -16,24 +16,33 @@ export function StoreProvider({ children }) {
   }, [cart]);
 
   function addToCart(product, delta = 1) {
-    setCart((currentCart) => {
-      const currentQuantity = currentCart[product.id]?.qty || 0;
-      const nextQuantity = Math.max(0, currentQuantity + delta);
+  setCart((currentCart) => {
+    const currentQuantity = currentCart[product.id]?.qty || 0;
+    const maxQuantity = Number(product.stock_quantity) || 0;
+    const nextQuantity = Math.max(
+      0,
+      Math.min(currentQuantity + delta, maxQuantity)
+    );
 
-      const nextCart = { ...currentCart };
+    if (delta > 0 && currentQuantity >= maxQuantity) {
+      alert(`В наличии только ${maxQuantity} шт.`);
+      return currentCart;
+    }
 
-      if (nextQuantity > 0) {
-        nextCart[product.id] = {
-          product,
-          qty: nextQuantity
-        };
-      } else {
-        delete nextCart[product.id];
-      }
+    const nextCart = { ...currentCart };
 
-      return nextCart;
-    });
-  }
+    if (nextQuantity > 0) {
+      nextCart[product.id] = {
+        product,
+        qty: nextQuantity
+      };
+    } else {
+      delete nextCart[product.id];
+    }
+
+    return nextCart;
+  });
+}
 
   function getQuantity(productId) {
     return cart[productId]?.qty || 0;

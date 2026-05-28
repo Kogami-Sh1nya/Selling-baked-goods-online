@@ -19,8 +19,8 @@ export const listProducts = async (req, res) => {
   try {
     const result = await pool.query(`
       SELECT *
-      FROM products
-      
+      FROM products p
+      ORDER BY p.id
     `);
 
     console.log(result.rows);
@@ -129,7 +129,10 @@ export const updateProduct = async (req, res) => {
         price = COALESCE($4, price),
         weight_grams = COALESCE($5, weight_grams),
         image_url = COALESCE($6, image_url),
-        stock_quantity = COALESCE($7, stock_quantity),
+        stock_quantity = CASE
+          WHEN $8::boolean = false THEN 0
+          ELSE COALESCE($7, stock_quantity)
+        END,
         is_available = COALESCE($8, is_available),
         ingredients = COALESCE($9, ingredients)
       WHERE id = $10

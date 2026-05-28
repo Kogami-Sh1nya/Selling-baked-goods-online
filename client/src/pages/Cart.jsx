@@ -35,7 +35,18 @@ export default function Cart() {
       alert('Некорректная почта');
       return;
     }
+    const phoneRegex = /^\+7\d{10}$/;
+    const addressRegex = /(ул\.|улица|проспект|пр-т|пер\.|переулок|бульвар|шоссе)\s+[А-Яа-яA-Za-z0-9ёЁ\s.-]+,\s*\d+[А-Яа-яA-Za-z/-]*$/i;
 
+    if (!phoneRegex.test(form.phone)) {
+    alert('Телефон должен быть в формате +7XXXXXXXXXX');
+    return;
+    }
+
+    if (!addressRegex.test(form.delivery_address)) {
+    alert('Адрес должен содержать улицу и номер дома. Например: улица Островского, 10');
+    return;
+    }
     await api('/orders', {
       method: 'POST',
       body: JSON.stringify({
@@ -85,7 +96,7 @@ export default function Cart() {
 
         <input
           required
-          placeholder="Телефон"
+          placeholder="Телефон: +7XXXXXXXXXX"
           value={form.phone}
           onChange={(event) => setForm({ ...form, phone: event.target.value })}
         />

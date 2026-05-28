@@ -22,6 +22,10 @@ export default function AdminPanel({ products = [] }) {
   const [localProducts, setLocalProducts] = useState(products);
   const [orders, setOrders] = useState([]);
   const [users, setUsers] = useState([]);
+  const [selectedProductId, setSelectedProductId] = useState('');
+  const selectedProduct = localProducts.find(
+    (product) => Number(product.id) === Number(selectedProductId)
+  );
 
   const [newProduct, setNewProduct] = useState({
     category_id: 1,
@@ -60,6 +64,28 @@ export default function AdminPanel({ products = [] }) {
   async function loadUsers() {
     const data = await api('/users');
     setUsers(data);
+  }
+  async function uploadImage(file) {
+    const formData = new FormData();
+    formData.append('image', file);
+
+    const token = localStorage.getItem('token');
+
+    const response = await fetch('https://localhost:5000/api/uploads/products', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`
+      },
+      body: formData
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || 'Ошибка загрузки изображения');
+    }
+
+    return data.image_url;
   }
 
   async function updateProduct(productId, patch) {
@@ -151,12 +177,24 @@ export default function AdminPanel({ products = [] }) {
 
           <form className="admin-form" onSubmit={createProduct}>
             <input
-              required
-              placeholder="Название"
-              value={newProduct.name}
-              onChange={(e) =>
-                setNewProduct({ ...newProduct, name: e.target.value })
-              }
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              onChange={async (e) => {
+                const file = e.target.files[0];
+
+                if (!file) return;
+
+                try {
+                  const imageUrl = await uploadImage(file);
+
+                  setNewProduct({
+                    ...newProduct,
+                    image_url: imageUrl
+                  });
+                } catch (error) {
+                  alert(error.message);
+                }
+              }}
             />
 
             <input
@@ -200,13 +238,7 @@ export default function AdminPanel({ products = [] }) {
               <option value={7}>Чизкейки</option>
             </select>
 
-            <input
-              placeholder="URL изображения"
-              value={newProduct.image_url}
-              onChange={(e) =>
-                setNewProduct({ ...newProduct, image_url: e.target.value })
-              }
-            />
+
 
             <textarea
               placeholder="Описание"
@@ -232,47 +264,79 @@ export default function AdminPanel({ products = [] }) {
 
           <h3>Управление товарами</h3>
 
-          {localProducts.map((product) => (
-            <div className="admin-row" key={product.id}>
-              <strong>{product.name}</strong>
+          <select
+            value={selectedProductId}
+            onChange={(e) => setSelectedProductId(e.target.value)}
+          >
+            <option value="">Выберите товар</option>
+            {localProducts
+              .slice()
+              .sort((a, b) => a.id - b.id)
+              .map((product) => (
+                <option key={product.id} value={product.id}>
+                  #{product.id} — {product.name}
+                </option>
+              ))}
+          </select>
 
-              <input
-                type="number"
-                defaultValue={product.price}
-                onBlur={(e) =>
-                  updateProduct(product.id, { price: Number(e.target.value) })
-                }
-              />
+          {selectedProduct && (
+            <div className="admin-product-editor">
+              <h4>{selectedProduct.name}</h4>
 
-              <input
-                type="number"
-                defaultValue={product.stock_quantity}
-                onBlur={(e) =>
-                  updateProduct(product.id, {
-                    stock_quantity: Number(e.target.value)
-                  })
-                }
-              />
+              <label>
+                Цена
+                <input
+                  type="number"
+                  defaultValue={selectedProduct.price}
+                  onBlur={(e) =>
+                    updateProduct(selectedProduct.id, {
+                      price: Number(e.target.value)
+                    })
+                  }
+                />
+              </label>
 
-              <select
-                defaultValue={String(product.is_available)}
-                onChange={(e) =>
-                  updateProduct(product.id, {
-                    is_available: e.target.value === 'true'
-                  })
-                }
-              >
-                <option value="true">В наличии</option>
-                <option value="false">Нет в наличии</option>
-              </select>
+              <label>
+                Количество в наличии
+                <input
+                  type="number"
+                  min="0"
+                  defaultValue={selectedProduct.stock_quantity}
+                  onBlur={(e) =>
+                    updateProduct(selectedProduct.id, {
+                      stock_quantity: Number(e.target.value),
+                      is_available: Number(e.target.value) > 0
+                    })
+                  }
+                />
+              </label>
+
+              <label>
+                Наличие
+                <select
+                  defaultValue={String(selectedProduct.is_available)}
+                  onChange={(e) =>
+                    updateProduct(selectedProduct.id, {
+                      is_available: e.target.value === 'true',
+                      stock_quantity:
+                        e.target.value === 'false'
+                          ? 0
+                          : selectedProduct.stock_quantity
+                    })
+                  }
+                >
+                  <option value="true">В наличии</option>
+                  <option value="false">Нет в наличии</option>
+                </select>
+              </label>
 
               {currentUser?.role === 'admin' && (
-                <button onClick={() => deleteProduct(product.id)}>
-                  Удалить
+                <button onClick={() => deleteProduct(selectedProduct.id)}>
+                  Удалить товар
                 </button>
               )}
             </div>
-          ))}
+          )}
         </div>
       )}
 

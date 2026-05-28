@@ -71,7 +71,7 @@ export async function createOrder(req, res) {
     const paymentResult = await client.query(
       `
       INSERT INTO payments(amount, status, card_last4)
-      VALUES ($1, 'новый', $2)
+      VALUES ($1, 'paid', $2)
       RETURNING id
       `,
       [finalPrice, String(payment.cardNumber).slice(-4)]
@@ -195,14 +195,52 @@ export async function allOrders(req, res) {
 }
 
 export async function setStatus(req, res) {
+  const client = await pool.connect();
+
   try {
+    await client.query('BEGIN');
+
     const { status } = req.body;
 
     if (!ALLOWED_STATUSES.includes(status)) {
       return res.status(400).json({ message: 'Некорректный статус заказа' });
     }
 
-    const { rows } = await q(
+    const currentOrderResult = await client.query(
+      'SELECT id, status FROM orders WHERE id = $1',
+      [req.params.id]
+    );
+
+    if (!currentOrderResult.rows.length) {
+      return res.status(404).json({ message: 'Заказ не найден' });
+    }
+
+    const currentOrder = currentOrderResult.rows[0];
+
+    if (currentOrder.status !== 'отменён' && status === 'отменён') {
+      const items = await client.query(
+        `
+        SELECT product_id, quantity
+        FROM order_items
+        WHERE order_id = $1
+        `,
+        [req.params.id]
+      );
+
+      for (const item of items.rows) {
+        await client.query(
+          `
+          UPDATE products
+          SET stock_quantity = stock_quantity + $1,
+              is_available = true
+          WHERE id = $2
+          `,
+          [item.quantity, item.product_id]
+        );
+      }
+    }
+
+    const updatedOrder = await client.query(
       `
       UPDATE orders
       SET status = $1
@@ -212,13 +250,14 @@ export async function setStatus(req, res) {
       [status, req.params.id]
     );
 
-    if (!rows.length) {
-      return res.status(404).json({ message: 'Заказ не найден' });
-    }
+    await client.query('COMMIT');
 
-    res.json(rows[0]);
+    res.json(updatedOrder.rows[0]);
   } catch (error) {
+    await client.query('ROLLBACK');
     console.error(error);
     res.status(500).json({ message: 'Ошибка изменения статуса' });
+  } finally {
+    client.release();
   }
 }
