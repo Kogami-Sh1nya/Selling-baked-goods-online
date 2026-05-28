@@ -1,0 +1,5 @@
+import bcrypt from 'bcryptjs'; import {body} from 'express-validator'; import {q} from '../config/db.js'; import {signToken} from '../utils/tokens.js';
+export const registerRules=[body('name').trim().isLength({min:2}),body('email').isEmail(),body('password').isLength({min:6})];
+export async function register(req,res){const {name,email,password}=req.body; const hash=await bcrypt.hash(password,10); try{const {rows}=await q("INSERT INTO users(name,email,password,role) VALUES($1,$2,$3,'user') RETURNING id,name,email,role",[name,email.toLowerCase(),hash]); res.status(201).json({user:rows[0],token:signToken(rows[0])});}catch(e){res.status(409).json({message:'Email уже зарегистрирован'});} }
+export const loginRules=[body('email').isEmail(),body('password').notEmpty()];
+export async function login(req,res){const {email,password}=req.body; const {rows}=await q('SELECT * FROM users WHERE email=$1',[email.toLowerCase()]); const user=rows[0]; if(!user||!(await bcrypt.compare(password,user.password))) return res.status(401).json({message:'Неверная почта или пароль'}); res.json({user:{id:user.id,name:user.name,email:user.email,role:user.role},token:signToken(user)});}

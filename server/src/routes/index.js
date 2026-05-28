@@ -1,0 +1,6 @@
+import {Router} from 'express'; import {validate} from '../middleware/validate.js'; import {auth,allow} from '../middleware/auth.js';
+import * as a from '../controllers/authController.js'; import * as p from '../controllers/productController.js'; import * as o from '../controllers/orderController.js'; import * as r from '../controllers/reviewController.js';
+const router=Router(); router.post('/auth/register',a.registerRules,validate,a.register); router.post('/auth/login',a.loginRules,validate,a.login);
+router.get('/categories',p.categories); router.get('/products',p.listProducts); router.get('/products/:id',p.productById); router.post('/products',auth,allow('seller','admin'),p.saveProduct); router.patch('/products/:id',auth,allow('seller','admin'),p.updateProduct); router.delete('/products/:id',auth,allow('admin'),p.deleteProduct);
+router.post('/orders',auth,allow('user','seller','admin'),o.createOrder); router.get('/orders/my',auth,o.myOrders); router.get('/orders',auth,allow('seller','admin'),o.allOrders); router.patch('/orders/:id/status',auth,allow('seller','admin'),o.setStatus);
+router.post('/products/:productId/reviews',auth,r.reviewRules,validate,r.addReview); router.delete('/reviews/:id',auth,allow('admin'),r.deleteReview); export default router;
