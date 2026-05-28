@@ -75,13 +75,13 @@ export const saveProduct = async (req, res) => {
       image_url,
       stock_quantity,
       is_available,
-      ingredients_text
+      ingredients
     } = req.body;
 
     const result = await pool.query(
       `
       INSERT INTO products
-      (category_id, name, description, price, weight_grams, image_url, stock_quantity, is_available, ingredients_text, created_at)
+      (category_id, name, description, price, weight_grams, image_url, stock_quantity, is_available, ingredients, created_at)
       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,NOW())
       RETURNING *
       `,
@@ -94,7 +94,7 @@ export const saveProduct = async (req, res) => {
         image_url,
         stock_quantity,
         is_available,
-        ingredients_text
+        ingredients
       ]
     );
 
@@ -116,7 +116,7 @@ export const updateProduct = async (req, res) => {
       image_url,
       stock_quantity,
       is_available,
-      ingredients_text
+      ingredients
     } = req.body;
 
     const result = await pool.query(
@@ -131,7 +131,7 @@ export const updateProduct = async (req, res) => {
         image_url = COALESCE($6, image_url),
         stock_quantity = COALESCE($7, stock_quantity),
         is_available = COALESCE($8, is_available),
-        ingredients_text = COALESCE($9, ingredients_text)
+        ingredients = COALESCE($9, ingredients)
       WHERE id = $10
       RETURNING *
       `,
@@ -144,7 +144,7 @@ export const updateProduct = async (req, res) => {
         image_url,
         stock_quantity,
         is_available,
-        ingredients_text,
+        ingredients,
         req.params.id
       ]
     );

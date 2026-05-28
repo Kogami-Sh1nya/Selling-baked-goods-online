@@ -245,3 +245,92 @@ textarea {
 .dropdown-menu button:hover {
   background: #f1dfd2;
 }
+.admin-panel {
+  margin-top: 40px;
+}
+
+.admin-tabs {
+  display: flex;
+  gap: 12px;
+  margin: 20px 0;
+  flex-wrap: wrap;
+}
+
+.admin-tabs button {
+  padding: 10px 18px;
+  border-radius: 12px;
+  border: none;
+  background: #2d1f1a;
+  color: white;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.admin-tabs button:hover {
+  background: #4a342c;
+}
+
+.admin-section {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.admin-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(220px, 1fr));
+  gap: 14px;
+  padding: 24px;
+  border-radius: 20px;
+  background: #fff8f3;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+}
+
+.admin-form textarea {
+  resize: none;
+  min-height: 90px;
+}
+
+.admin-form button {
+  grid-column: 1 / -1;
+}
+
+.admin-row {
+  display: grid;
+  grid-template-columns: 1.5fr 120px 120px 150px auto;
+  gap: 12px;
+  align-items: center;
+  padding: 18px;
+  border-radius: 18px;
+  background: #fff8f3;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+}
+
+.admin-row input,
+.admin-row select,
+.admin-form input,
+.admin-form select,
+.admin-form textarea {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid #ead8ca;
+  border-radius: 12px;
+  padding: 10px 12px;
+  font: inherit;
+}
+
+.admin-row button,
+.admin-form button {
+  border: none;
+  border-radius: 12px;
+  padding: 10px 14px;
+  background: #8b3f2f;
+  color: white;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.admin-row button:hover,
+.admin-form button:hover {
+  background: #6f3024;
+}
