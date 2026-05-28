@@ -179,23 +179,40 @@ textarea {
 }
 
 .dropdown > button {
-  background: transparent;
+  background: #2d1f1a;
+  color: white;
   border: none;
-  font: inherit;
+  padding: 10px 18px;
+  border-radius: 12px;
   cursor: pointer;
+  font-size: 15px;
+  font-weight: 600;
+  transition: 0.2s;
+}
+
+.dropdown > button:hover {
+  background: #4a342c;
 }
 
 .dropdown-menu {
   display: none;
   position: absolute;
-  top: 100%;
+  top: calc(100%);
   left: 0;
-  min-width: 190px;
-  background: #fff;
-  border-radius: 16px;
+  min-width: 220px;
+
+  background: #fff8f3;
+
+  border: 1px solid #ead8ca;
+
+  border-radius: 18px;
+
   padding: 10px;
-  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.15);
-  z-index: 20;
+
+  box-shadow:
+    0 10px 30px rgba(0,0,0,0.12);
+
+  z-index: 100;
 }
 
 .dropdown:hover .dropdown-menu {
@@ -205,14 +222,26 @@ textarea {
 }
 
 .dropdown-menu button {
+  width: 100%;
   text-align: left;
+
   border: none;
+
   background: transparent;
-  padding: 10px 12px;
-  border-radius: 10px;
+
+  color: #2d1f1a;
+
+  padding: 12px 14px;
+
+  border-radius: 12px;
+
   cursor: pointer;
+
+  font-size: 15px;
+
+  transition: 0.2s;
 }
 
 .dropdown-menu button:hover {
-  background: #f7efe8;
+  background: #f1dfd2;
 }
