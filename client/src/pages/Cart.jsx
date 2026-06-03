@@ -44,7 +44,7 @@ export default function Cart() {
     }
 
     if (!addressRegex.test(form.delivery_address)) {
-    alert('Адрес должен содержать улицу и номер дома. Например: улица Островского, 10');
+    alert('Адрес должен содержать улицу и номер дома. Например: улица Ленина, 10');
     return;
     }
     await api('/orders', {
