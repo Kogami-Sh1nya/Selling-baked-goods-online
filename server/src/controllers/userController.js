@@ -45,31 +45,65 @@ export const updateUserRole = async (req, res) => {
 };
 
 export const deleteUser = async (req, res) => {
+  const client = await pool.connect();
+
   try {
-    const result = await pool.query(
+    const userId = Number(req.params.id);
+
+    if (req.user?.id === userId) {
+      return res.status(400).json({
+        message: 'Нельзя удалить собственный аккаунт'
+      });
+    }
+
+    await client.query('BEGIN');
+
+    const paymentsResult = await client.query(
       `
-      UPDATE users
-      SET
-        name = 'Удалённый пользователь',
-        email = CONCAT('deleted_user_', id, '@deleted.local'),
-        password = '',
-        role = 'user'
-      WHERE id = $1
-      RETURNING id, name, email, role, created_at
+      SELECT payment_id
+      FROM orders
+      WHERE user_id = $1 AND payment_id IS NOT NULL
       `,
-      [req.params.id]
+      [userId]
+    );
+
+    const paymentIds = paymentsResult.rows.map((row) => row.payment_id);
+
+    await client.query('DELETE FROM reviews WHERE user_id = $1', [userId]);
+    await client.query('DELETE FROM orders WHERE user_id = $1', [userId]);
+
+    if (paymentIds.length > 0) {
+      await client.query(
+        'DELETE FROM payments WHERE id = ANY($1::int[])',
+        [paymentIds]
+      );
+    }
+
+    const result = await client.query(
+      `
+      DELETE FROM users
+      WHERE id = $1
+      RETURNING id, name, email, role
+      `,
+      [userId]
     );
 
     if (!result.rows.length) {
+      await client.query('ROLLBACK');
       return res.status(404).json({ message: 'Пользователь не найден' });
     }
 
+    await client.query('COMMIT');
+
     res.json({
-      message: 'Пользователь обезличен',
+      message: 'Пользователь удалён',
       user: result.rows[0]
     });
   } catch (error) {
+    await client.query('ROLLBACK');
     console.error(error);
     res.status(500).json({ message: 'Ошибка удаления пользователя' });
+  } finally {
+    client.release();
   }
 };

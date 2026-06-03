@@ -6,6 +6,7 @@ export default function AuthModal({ onClose }) {
   const { setUser } = useStore();
 
   const [mode, setMode] = useState('login');
+  const [error, setError] = useState('');
 
   const [form, setForm] = useState({
     name: '',
@@ -15,27 +16,32 @@ export default function AuthModal({ onClose }) {
 
   async function submitHandler(event) {
     event.preventDefault();
+    setError('');
 
     if (!/^[^@]+@[^@]+\.[^@]+$/.test(form.email)) {
-      alert('Введите корректный Email с @');
+      setError('Введите корректный Email с @');
       return;
     }
 
     if (form.password.length < 6) {
-      alert('Пароль минимум 6 символов');
+      setError('Пароль минимум 6 символов');
       return;
     }
 
-    const data = await api(`/auth/${mode === 'login' ? 'login' : 'register'}`, {
-      method: 'POST',
-      body: JSON.stringify(form)
-    });
+    try {
+      const data = await api(`/auth/${mode === 'login' ? 'login' : 'register'}`, {
+        method: 'POST',
+        body: JSON.stringify(form)
+      });
 
-    localStorage.setItem('token', data.token);
-    localStorage.setItem('user', JSON.stringify(data.user));
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('user', JSON.stringify(data.user));
 
-    setUser(data.user);
-    onClose();
+      setUser(data.user);
+      onClose();
+    } catch (error) {
+      setError(error.message || 'Ошибка авторизации');
+    }
   }
 
   return (
@@ -46,6 +52,8 @@ export default function AuthModal({ onClose }) {
         </button>
 
         <h2>{mode === 'login' ? 'Авторизация' : 'Регистрация'}</h2>
+
+        {error && <p className="form-error">{error}</p>}
 
         {mode === 'register' && (
           <input
@@ -85,7 +93,10 @@ export default function AuthModal({ onClose }) {
         <button
           type="button"
           className="link-button"
-          onClick={() => setMode(mode === 'login' ? 'register' : 'login')}
+          onClick={() => {
+            setError('');
+            setMode(mode === 'login' ? 'register' : 'login');
+          }}
         >
           {mode === 'login' ? 'Создать аккаунт' : 'Уже есть аккаунт'}
         </button>

@@ -494,3 +494,10 @@ textarea {
 .admin-review-card button {
   background: #8b3f2f;
 }
+.form-error {
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: #ffe5df;
+  color: #8b2f20;
+  font-weight: 700;
+}

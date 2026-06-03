@@ -35,18 +35,26 @@ export default function Cart() {
       alert('Некорректная почта');
       return;
     }
+
     const phoneRegex = /^\+7\d{10}$/;
-    const addressRegex = /(ул\.|улица|проспект|пр-т|пер\.|переулок|бульвар|шоссе)\s+[А-Яа-яA-Za-z0-9ёЁ\s.-]+,\s*\d+[А-Яа-яA-Za-z/-]*$/i;
+    const addressRegex =
+      /(ул\.|улица|проспект|пр-т|пер\.|переулок|бульвар|шоссе)\s+[А-Яа-яA-Za-z0-9ёЁ\s.-]+,\s*\d+[А-Яа-яA-Za-z/-]*$/i;
 
     if (!phoneRegex.test(form.phone)) {
-    alert('Телефон должен быть в формате +7XXXXXXXXXX');
-    return;
+      alert('Телефон должен быть в формате +7XXXXXXXXXX');
+      return;
     }
 
     if (!addressRegex.test(form.delivery_address)) {
-    alert('Адрес должен содержать улицу и номер дома. Например: улица Ленина, 10');
-    return;
+      alert('Адрес должен содержать улицу и номер дома. Например: улица Ленина, 10');
+      return;
     }
+
+    if (!/^\d{16}$/.test(form.cardNumber)) {
+      alert('Номер карты должен состоять только из 16 цифр');
+      return;
+    }
+
     await api('/orders', {
       method: 'POST',
       body: JSON.stringify({
@@ -96,9 +104,18 @@ export default function Cart() {
 
         <input
           required
+          maxLength={12}
           placeholder="Телефон: +7XXXXXXXXXX"
           value={form.phone}
-          onChange={(event) => setForm({ ...form, phone: event.target.value })}
+          onChange={(event) => {
+            let value = event.target.value.replace(/[^\d+]/g, '');
+
+            if (!value.startsWith('+')) {
+              value = value.replace(/\+/g, '');
+            }
+
+            setForm({ ...form, phone: value.slice(0, 12) });
+          }}
         />
 
         <input
@@ -132,11 +149,17 @@ export default function Cart() {
 
         <input
           required
+          maxLength={16}
+          inputMode="numeric"
           pattern="[0-9]{16}"
-          placeholder="Номер карты"
+          title="Номер карты должен состоять только из 16 цифр"
+          placeholder="Номер карты: 16 цифр"
           value={form.cardNumber}
           onChange={(event) =>
-            setForm({ ...form, cardNumber: event.target.value })
+            setForm({
+              ...form,
+              cardNumber: event.target.value.replace(/\D/g, '').slice(0, 16)
+            })
           }
         />
 

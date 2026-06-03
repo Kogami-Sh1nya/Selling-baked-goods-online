@@ -16,33 +16,34 @@ export function StoreProvider({ children }) {
   }, [cart]);
 
   function addToCart(product, delta = 1) {
-  setCart((currentCart) => {
-    const currentQuantity = currentCart[product.id]?.qty || 0;
-    const maxQuantity = Number(product.stock_quantity) || 0;
-    const nextQuantity = Math.max(
-      0,
-      Math.min(currentQuantity + delta, maxQuantity)
-    );
+    setCart((currentCart) => {
+      const currentQuantity = currentCart[product.id]?.qty || 0;
+      const maxQuantity = Number(product.stock_quantity) || 0;
 
-    if (delta > 0 && currentQuantity >= maxQuantity) {
-      alert(`В наличии только ${maxQuantity} шт.`);
-      return currentCart;
-    }
+      const nextQuantity = Math.max(
+        0,
+        Math.min(currentQuantity + delta, maxQuantity)
+      );
 
-    const nextCart = { ...currentCart };
+      const nextCart = { ...currentCart };
 
-    if (nextQuantity > 0) {
-      nextCart[product.id] = {
-        product,
-        qty: nextQuantity
-      };
-    } else {
-      delete nextCart[product.id];
-    }
+      if (nextQuantity > 0) {
+        nextCart[product.id] = {
+          product,
+          qty: nextQuantity
+        };
+      } else {
+        delete nextCart[product.id];
+      }
 
-    return nextCart;
-  });
-}
+      return nextCart;
+    });
+  }
+
+  function clearCart() {
+    setCart({});
+    localStorage.removeItem('cart');
+  }
 
   function getQuantity(productId) {
     return cart[productId]?.qty || 0;
@@ -58,6 +59,7 @@ export function StoreProvider({ children }) {
         cart,
         items,
         addToCart,
+        clearCart,
         getQuantity
       }}
     >

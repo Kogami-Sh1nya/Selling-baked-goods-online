@@ -16,6 +16,20 @@ export default function ProductModal({ product, onClose }) {
     loadReviews();
   }, [product.id]);
 
+  useEffect(() => {
+    function handleKeyDown(event) {
+      if (event.key === 'Escape') {
+        onClose();
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [onClose]);
+
   async function loadReviews() {
     const data = await api(`/products/${product.id}/reviews`);
     setReviews(data);
@@ -51,8 +65,8 @@ export default function ProductModal({ product, onClose }) {
       : product.avg_rating || 0;
 
   return (
-    <div className="overlay">
-      <div className="modal wide">
+    <div className="overlay" onClick={onClose}>
+      <div className="modal wide" onClick={(event) => event.stopPropagation()}>
         <button className="x" onClick={onClose}>×</button>
 
         <img

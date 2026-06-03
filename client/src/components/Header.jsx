@@ -15,7 +15,7 @@ const categories = [
 
 export default function Header() {
   const navigate = useNavigate();
-  const { user, setUser, items } = useStore();
+  const { user, setUser, items, clearCart } = useStore();
   const [isAuthOpen, setIsAuthOpen] = useState(false);
 
   const cartCount = items.reduce((sum, item) => sum + item.qty, 0);
@@ -35,6 +35,7 @@ export default function Header() {
   function logout() {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
+    clearCart();
     setUser(null);
   }
 
@@ -47,7 +48,7 @@ export default function Header() {
 
         <nav>
           <div className="dropdown">
-            <button type="button" onClick={() => navigate('/')}>
+            <button type="button" onClick={goHome}>
               Каталог
             </button>
 
