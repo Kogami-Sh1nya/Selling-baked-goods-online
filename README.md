@@ -135,7 +135,6 @@ bakery-street/
 │       └── app.js                   # запуск HTTPS Express-сервера
 │
 ├── package.json                     # запуск client и server через concurrently
-├── .gitignore
 └── README.md
 ```
 
